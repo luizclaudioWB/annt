@@ -1,0 +1,44 @@
+este cara pega o outgoing:
+
+mp.messaging.outgoing.async-email-request.connector=smallrye-kafka
+mp.messaging.outgoing.async-email-request.acks=all
+mp.messaging.outgoing.async-email-request.retries=10
+mp.messaging.outgoing.async-email-request.topic=ASYNC-EMAIL
+mp.messaging.outgoing.async-email-request.value.serializer=io.confluent.kafka.serializers.KafkaJsonSerializer
+mp.messaging.outgoing.async-email-request.value.deserializer=io.confluent.kafka.serializers.KafkaJsonDeserializer
+mp.messaging.outgoing.async-email-request.json.value.type=br.com.wisebyte.nottus.fd.analisador.redemet.diario.RedemetDiarioAnalisadorRequest
+
+é criado um canal para coletar
+
+public class KafkaBusiness {
+
+  @Channel( "async-email-request" )
+  Emitter<AnalisadorRequest> analisadorRequestChannel;
+
+  @Channel( "async-email-request" )
+  Emitter<AnalisadorRequest> analisadorRequestChannel;
+
+
+
+outro application recebe:
+
+mp.messaging.incoming.email-broadcast.connector=smallrye-kafka
+mp.messaging.incoming.email-broadcast.acks=all
+mp.messaging.incoming.email-broadcast.retries=10
+mp.messaging.incoming.email-broadcast.topic=email-broadcast
+mp.messaging.incoming.email-broadcast.key.serializer=org.apache.kafka.common.serialization.StringSerializer
+mp.messaging.incoming.email-broadcast.value.deserializer=io.confluent.kafka.serializers.KafkaJsonDeserializer
+mp.messaging.incoming.email-broadcast.json.value.type=br.com.wisebyte.tcrmanager.server.dto.kafka.BddBroadcastMessage
+mp.messaging.incoming.email-broadcast.group.id=portal-data-sync-peer
+
+criado uma classe: 
+    @Incoming( "email-broadcast" )
+    @Transactional( Transactional.TxType.NOT_SUPPORTED )
+    CompletionStage<Void> onBddBroadcast( @NotNull Message<BddBroadcastMessage> message ) {
+        channel.fireAsync( message.getPayload( ) );
+        return message.ack( );
+    }
+}
+
+
+;e preciso de um pojo
